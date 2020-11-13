@@ -1,7 +1,7 @@
 package proxy
+
 import (
 	"container/ring"
-	"context"
 	"github.com/jackc/pgx"
 	"log"
 	"time"
@@ -89,7 +89,11 @@ func monitorBackend(backend string) {
 			time.Sleep(time.Second * 5)
 		}
 		first = false
-		db, err := pgx.Connect(context.Background(), backend)
+		connConfigs, err := pgx.ParseConnectionString(backend)
+		if err != nil{
+			log.Printf("%v Connection option incorrect: %v", backend, err)
+		}
+		db, err := pgx.Connect(connConfigs)
 		//db, err := sql.Open("postgres", backend)
 		if err != nil {
 			if status != StatusDown {
@@ -100,7 +104,7 @@ func monitorBackend(backend string) {
 			continue
 		}
 
-		rows, err := db.Query(context.Background(), "SELECT pg_is_in_recovery()")
+		rows, err := db.Query("SELECT pg_is_in_recovery()")
 		if err != nil {
 			if status != StatusDown {
 				status = StatusDown
