@@ -5,17 +5,18 @@ RUN apk add --no-cache git
 WORKDIR /tmp/go_load_balancer
 
 COPY go.mod .
-COPY go.sum .
 
 RUN go mod download
 
 COPY . .
 
-RUN go build -o ./out/go_load_balancer .
+RUN go build -o ./out/go_load_balancer ./src
 
 FROM alpine:3.7
 RUN apk add ca-certificates
 
+COPY --from=build_base /tmp/go_load_balancer/src/PgFBalancer.cfg /PgFBalancer.cfg
+COPY --from=build_base /tmp/go_load_balancer/src/web /web
 COPY --from=build_base /tmp/go_load_balancer/out/go_load_balancer /app/go_load_balancer
 
 EXPOSE 2345
